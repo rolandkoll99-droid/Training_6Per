@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover" />
+<title>ESV Grein – Turniersteuerung (Live-Sync mit Firebase)</title>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+
+<style>
+:root{
+    --green:#1f5e3a;
+    --green-light:#eef5e9;
+    --dark:#102417;
+    --red:#b93a32;
+    --gold:#ffdf8c;
+    --border:#d7e4cf;
+    --bg:#f6f9f3;
+    --sync-badge:#2c7da0;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:'Segoe UI', system-ui, -apple-system, 'Roboto', sans-serif;
+    background:linear-gradient(135deg,#17351f,#0d1f13);
+    color:#222;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+}
+
+.container{
+    width:100%;
+    max-width:2388px;
+    margin:0 auto;
+    background:white;
+    border-radius:36px;
+    overflow:hidden;
+    box-shadow:0 25px 55px rgba(0,0,0,.45);
+    display:flex;
+    flex-direction:column;
+    height:calc(100vh - 32px);
+    max-height:1630px;
+}
+
+.topbar{
+    background:var(--green);
+    color:white;
+    padding:20px 28px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:24px;
+    flex-wrap:wrap;
+    flex-shrink:0;
+}
+
+.title{
+    font-size:1.9rem;
+    font-weight:900;
+    white-space:nowrap;
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.sync-status{
+    font-size:0.75rem;
+    background:rgba(255,255,255,0.25);
+    padding:4px 12px;
+    border-radius:40px;
+    font-weight:normal;
+    letter-spacing:0.5px;
+}
+
+.controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    align-items:center;
+}
+
+input,select,button{
+    border:none;
+    border-radius:14px;
+    padding:10px 16px;
+    font-size:0.95rem;
+    font-weight:500;
+}
+
+input,select{
+    background:white;
+    box-shadow:0 1px 3px rgba(0,0,0,0.1);
+}
+
+button{
+    background:var(--green);
+    color:white;
+    cursor:pointer;
+    transition:0.2s;
+    font-weight:700;
+}
+
+button:hover{
+    transform:translateY(-1px);
+    filter:brightness(1.05);
+}
+
+.main-layout{
+    display:flex;
+    flex-direction:column;
+    flex:1;
+    min-height:0;
+    overflow:hidden;
+}
+
+/* FIXIERTER SCORE-BEREICH (oben) */
+.score-fixed-area{
+    background:white;
+    padding:24px 32px 20px 32px;
+    border-bottom:2px solid var(--border);
+    flex-shrink:0;
+}
+
+.scoreboard{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:32px;
+    margin-bottom:20px;
+}
+
+.scoreCard{
+    border-radius:28px;
+    padding:24px 20px;
+    background:var(--bg);
+    text-align:center;
+    border-bottom:10px solid var(--green);
+    transition:0.1s;
+}
+
+.scoreCard.red{
+    border-bottom-color:var(--red);
+}
+
+.bigName{
+    font-size:2rem;
+    font-weight:900;
+    margin-bottom:16px;
+    word-break:break-word;
+}
+
+.bigScore{
+    font-size:6rem;
+    font-weight:900;
+    line-height:1;
+    color:var(--green);
+}
+
+.games{
+    margin-top:16px;
+    font-size:1.2rem;
+    font-weight:600;
+}
+
+.games span{
+    display:inline-block;
+    margin-top:8px;
+    background:var(--dark);
+    color:white;
+    padding:8px 28px;
+    border-radius:40px;
+    font-size:1.8rem;
+    font-weight:900;
+}
+
+.infoBar{
+    margin-top:18px;
+    display:flex;
+    justify-content:center;
+    gap:22px;
+    flex-wrap:wrap;
+}
+
+.infoBox{
+    background:var(--green-light);
+    padding:12px 24px;
+    border-radius:28px;
+    font-size:1.1rem;
+    font-weight:800;
+    text-align:center;
+}
+
+.timer{
+    font-family:'Fira Mono', monospace;
+    background:#111;
+    color:#c9ffaf;
+}
+
+/* UNTERER TEIL: KEHREN-EINGABE */
+.kehren-area{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:1px;
+    background:var(--border);
+    flex:1;
+    min-height:0;
+    overflow:hidden;
+}
+
+.kehren-panel{
+    background:var(--bg);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    padding:16px 20px 20px 20px;
+}
+
+.kehren-panel:first-child{
+    border-right:1px solid var(--border);
+}
+
+.panel-header{
+    text-align:center;
+    font-size:1.6rem;
+    font-weight:900;
+    background:white;
+    padding:14px;
+    border-radius:24px;
+    margin-bottom:18px;
+    color:var(--green);
+    box-shadow:0 2px 6px rgba(0,0,0,0.05);
+    flex-shrink:0;
+}
+
+.kehren-list{
+    overflow-y:auto;
+    flex:1;
+    padding-right:4px;
+    scrollbar-width:thin;
+}
+
+.kehren-list::-webkit-scrollbar{
+    width:5px;
+}
+
+.kehreRow{
+    display:grid;
+    grid-template-columns:55px 1fr 60px;
+    gap:12px;
+    align-items:center;
+    background:white;
+    padding:12px 14px;
+    border-radius:20px;
+    margin-bottom:12px;
+    border:1px solid var(--border);
+    transition:0.1s;
+}
+
+.kehreRow.active{
+    border:3px solid #4caf50;
+    background:#f3fff2;
+    box-shadow:0 6px 12px rgba(0,0,0,0.05);
+}
+
+.kehreNr{
+    font-weight:900;
+    text-align:center;
+    font-size:1.2rem;
+}
+
+.points{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+}
+
+.pointBtn{
+    min-width:48px;
+    padding:10px 0;
+    background:white;
+    color:#222;
+    border:2px solid var(--border);
+    font-weight:900;
+    border-radius:36px;
+    transition:0.08s linear;
+    font-size:0.9rem;
+}
+
+.pointBtn:hover{
+    background:var(--green);
+    color:white;
+    transform:scale(0.96);
+}
+
+.valueBox{
+    text-align:center;
+    font-size:1.5rem;
+    font-weight:900;
+    color:var(--green);
+}
+
+.footer{
+    display:flex;
+    justify-content:center;
+    gap:18px;
+    padding:18px 24px;
+    border-top:2px solid var(--border);
+    flex-wrap:wrap;
+    background:#ffffff;
+    flex-shrink:0;
+}
+
+.footer button{
+    min-width:170px;
+    font-size:0.95rem;
+    padding:12px 14px;
+}
+
+.gold{
+    background:var(--gold);
+    color:#1f3b2a;
+    font-weight:900;
+}
+
+.redBtn{
+    background:var(--red);
+}
+
+.toast{
+    position:fixed;
+    bottom:35px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#1e2a21;
+    color:white;
+    padding:14px 28px;
+    border-radius:60px;
+    font-weight:700;
+    font-size:0.95rem;
+    opacity:0;
+    transition:0.2s;
+    pointer-events:none;
+    z-index:2000;
+    box-shadow:0 8px 20px rgba(0,0,0,0.2);
+}
+
+.toast.show{
+    opacity:1;
+}
+
+#winnerMessage{
+    text-align:center;
+    margin-top:12px;
+    font-size:1.6rem;
+    font-weight:900;
+    color:var(--green);
+    background:#fef7e0;
+    padding:8px;
+    border-radius:40px;
+}
+
+/* Remote-Sync Badge */
+.sync-badge{
+    background:var(--sync-badge);
+    font-size:0.7rem;
+    padding:4px 12px;
+    border-radius:40px;
+}
+
+@media (max-width: 1200px){
+    .bigScore{
+        font-size:4.5rem;
+    }
+    .pointBtn{
+        min-width:42px;
+    }
+    .kehreRow{
+        grid-template-columns:48px 1fr 52px;
+    }
+}
+
+@media print{
+    body{background:white;}
+    .topbar, .footer, .controls, .toast{display:none;}
+    .container{max-width:100%; box-shadow:none;}
+    .kehren-area{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="topbar">
+        <div class="title">
+            🥌 ESV Grein – Ligaspiel
+            <span class="sync-status" id="syncStatusBadge">🔄 Sync aktiv</span>
+        </div>
+        <div class="controls">
+            <input id="teamAInput" value="Mannschaft W">
+            <span>VS</span>
+            <input id="teamBInput" value="Mannschaft E">
+
+            <select id="kehrenSelect">
+                <option>4</option>
+                <option selected>6</option>
+                <option>8</option>
+                <option>10</option>
+                <option>12</option>
+            </select>
+
+            <select id="gamesCountSelect">
+                <option value="2">2 Spiele</option>
+                <option value="3">3 Spiele</option>
+                <option value="4">4 Spiele</option>
+                <option value="5" selected>5 Spiele</option>
+            </select>
+
+            <button onclick="openSpectatorWindow()">📺 Zuschauer-Monitor</button>
+            <button onclick="fullReset()">Neues Turnier</button>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="score-fixed-area">
+            <div class="scoreboard">
+                <div class="scoreCard">
+                    <div class="bigName" id="centerNameA">Mannschaft W</div>
+                    <div class="bigScore" id="scoreA">0</div>
+                    <div class="games">
+                        Spielstand (Punkte) <br>
+                        <span id="gamesA">0</span>
+                    </div>
+                </div>
+                <div class="scoreCard red">
+                    <div class="bigName" id="centerNameB">Mannschaft E</div>
+                    <div class="bigScore" id="scoreB">0</div>
+                    <div class="games">
+                        Spielstand (Punkte) <br>
+                        <span id="gamesB">0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="infoBar">
+                <div class="infoBox">Aktuelle Kehre: <span id="currentKehre">1</span></div>
+                <div class="infoBox timer" id="timer">00:00:00</div>
+                <div class="infoBox">Spiele gesamt: <span id="totalGamesDisplay">5</span></div>
+                <div class="infoBox">Wertung: Sieg 2P / Remis 1P</div>
+            </div>
+            <div id="winnerMessage"></div>
+        </div>
+
+        <div class="kehren-area">
+            <div class="kehren-panel">
+                <div class="panel-header" id="leftTitle">🏒 Mannschaft W</div>
+                <div class="kehren-list" id="leftPanel"></div>
+            </div>
+            <div class="kehren-panel">
+                <div class="panel-header" id="rightTitle">⛷️ Mannschaft E</div>
+                <div class="kehren-list" id="rightPanel"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <button class="gold" onclick="evaluateGame()">🏆 Spiel werten (2/1/0)</button>
+        <button onclick="resetRound()">🔄 Kehren löschen (akt. Spiel)</button>
+        <button class="redBtn" onclick="window.print()">🖨️ Drucken</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== FIREBASE KONFIGURATION ====================
+// 🔥 HIER DEINE EIGENEN FIREBASE-ZUGANGSDATEN EINTRAGEN 🔥
+// Gehe zu https://console.firebase.google.com/ -> Projekteinstellungen -> Allgemein -> Meine Apps -> Firebase SDK snippet -> config
+const firebaseConfig = {
+    apiKey: "DEIN_API_KEY",            // <-- HIER DEIN API KEY
+    authDomain: "DEIN_PROJEKT.firebaseapp.com",  // <-- DEIN AUTH DOMAIN
+    projectId: "DEIN_PROJEKT_ID",      // <-- DEINE PROJECT ID
+    storageBucket: "DEIN_PROJEKT.appspot.com",
+    messagingSenderId: "DEINE_SENDER_ID",
+    appId: "DEINE_APP_ID"
+};
+// ================================================================
+
+// Firebase initialisieren (nur wenn konfiguriert)
+let db = null;
+let firestoreAvailable = false;
+let syncTimeout = null;
+let isRemoteUpdate = false;  // verhindert Sync-Schleifen
+
+try {
+    if(firebaseConfig.apiKey !== "DEIN_API_KEY" && firebaseConfig.projectId !== "DEIN_PROJEKT_ID"){
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        firestoreAvailable = true;
+        document.getElementById('syncStatusBadge').innerHTML = '☁️ Live-Sync';
+        document.getElementById('syncStatusBadge').style.background = '#2c7da0';
+        toast("Firebase verbunden – Änderungen werden live synchronisiert");
+    } else {
+        console.warn("Bitte Firebase-Konfiguration in der Datei eintragen!");
+        document.getElementById('syncStatusBadge').innerHTML = '⚠️ Kein Sync';
+        document.getElementById('syncStatusBadge').style.background = '#b93a32';
+        toast("Firebase nicht konfiguriert – nur lokaler Modus", 3000);
+    }
+} catch(e){
+    console.error("Firebase init error", e);
+    document.getElementById('syncStatusBadge').innerHTML = '❌ Sync fehlerhaft';
+}
+
+// ---------- Turnier-Variablen ----------
+let kehren = 6;
+let pointsA = [];
+let pointsB = [];
+let matchesHistory = [];
+let teamAName = "Mannschaft W";
+let teamBName = "Mannschaft E";
+let totalGames = 5;
+let spectatorWindow = null;
+
+// ---------- Helper ----------
+function getTeamAPointsFromMatches(){
+    return matchesHistory.reduce((sum, m) => {
+        if(m.winner === 'A') return sum + 2;
+        if(m.winner === 'draw') return sum + 1;
+        return sum;
+    }, 0);
+}
+
+function getTeamBPointsFromMatches(){
+    return matchesHistory.reduce((sum, m) => {
+        if(m.winner === 'B') return sum + 2;
+        if(m.winner === 'draw') return sum + 1;
+        return sum;
+    }, 0);
+}
+
+function getNumberOfPlayedMatches(){
+    return matchesHistory.length;
+}
+
+function isTournamentFinished(){
+    return getNumberOfPlayedMatches() >= totalGames;
+}
+
+function getWinnerMessageText(){
+    if(!isTournamentFinished()) return "";
+    const ptsA = getTeamAPointsFromMatches();
+    const ptsB = getTeamBPointsFromMatches();
+    if(ptsA > ptsB) return `🏆 TURNIERSIEGER: ${teamAName}  (${ptsA}:${ptsB} Punkte) 🏆`;
+    if(ptsB > ptsA) return `🏆 TURNIERSIEGER: ${teamBName}  (${ptsB}:${ptsA} Punkte) 🏆`;
+    return `🤝 TURNIER UNENTSCHIEDEN – ${ptsA}:${ptsB} Punkte 🤝`;
+}
+
+function resetCurrentGameArrays(){
+    pointsA = Array(kehren).fill(null);
+    pointsB = Array(kehren).fill(null);
+}
+
+// ---------- FIREBASE SYNC (speichern & laden) ----------
+function syncToFirebase() {
+    if(!firestoreAvailable || isRemoteUpdate) return;
+    if(syncTimeout) clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(() => {
+        const gameState = {
+            pointsA: pointsA,
+            pointsB: pointsB,
+            matchesHistory: matchesHistory,
+            teamAName: teamAName,
+            teamBName: teamBName,
+            kehren: kehren,
+            totalGames: totalGames,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        db.collection("turnierLive").doc("aktuellesSpiel").set(gameState)
+            .then(() => {
+                // optional: status kurz anzeigen
+            })
+            .catch(err => console.warn("Firebase sync error", err));
+    }, 150);
+}
+
+function loadFromFirebaseSnapshot(doc) {
+    if(!doc.exists) return;
+    isRemoteUpdate = true;
+    const data = doc.data();
+    if(data.pointsA) pointsA = [...data.pointsA];
+    if(data.pointsB) pointsB = [...data.pointsB];
+    if(data.matchesHistory) matchesHistory = [...data.matchesHistory];
+    if(data.teamAName) teamAName = data.teamAName;
+    if(data.teamBName) teamBName = data.teamBName;
+    if(data.kehren) kehren = data.kehren;
+    if(data.totalGames) totalGames = data.totalGames;
+    
+    // DOM-Elemente nachziehen
+    document.getElementById('teamAInput').value = teamAName;
+    document.getElementById('teamBInput').value = teamBName;
+    document.getElementById('kehrenSelect').value = kehren;
+    document.getElementById('gamesCountSelect').value = totalGames;
+    
+    updateAllUI();
+    setTimeout(() => { isRemoteUpdate = false; }, 100);
+}
+
+// Firebase Listener starten
+if(firestoreAvailable){
+    db.collection("turnierLive").doc("aktuellesSpiel").onSnapshot((doc) => {
+        if(doc.exists){
+            loadFromFirebaseSnapshot(doc);
+        } else {
+            // Initialer State beim ersten Start
+            const initState = {
+                pointsA: pointsA,
+                pointsB: pointsB,
+                matchesHistory: matchesHistory,
+                teamAName: teamAName,
+                teamBName: teamBName,
+                kehren: kehren,
+                totalGames: totalGames,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            db.collection("turnierLive").doc("aktuellesSpiel").set(initState);
+        }
+    });
+}
+
+// ---------- UI / Spiellogik ----------
+function fullReset(){
+    if(!confirm("Neues Turnier starten? Alle Spielergebnisse werden gelöscht.")) return;
+    matchesHistory = [];
+    resetCurrentGameArrays();
+    document.getElementById('winnerMessage').innerHTML = "";
+    updateAllUI();
+    syncToFirebase();
+    toast("Neues Turnier gestartet – 2‑5 Spiele mit 2/1/0 Punkten");
+}
+
+function resetRound(){
+    if(isTournamentFinished()){
+        toast("Turnier beendet – neues Turnier starten");
+        return;
+    }
+    resetCurrentGameArrays();
+    updateAllUI();
+    syncToFirebase();
+    toast("Aktuelle Kehren (dieses Spiel) wurden zurückgesetzt.");
+}
+
+function evaluateGame(){
+    if(isTournamentFinished()){
+        toast("Turnier bereits beendet! Starte ein neues Turnier.");
+        return;
+    }
+    for(let i=0;i<kehren;i++){
+        if(pointsA[i] === null || pointsB[i] === null){
+            toast("Bitte erst alle Kehren dieses Spiels ausfüllen.");
+            return;
+        }
+    }
+    const sumA = pointsA.reduce((a,b)=>a+b,0);
+    const sumB = pointsB.reduce((a,b)=>a+b,0);
+    
+    let matchResult = null;
+    if(sumA > sumB){
+        matchResult = { pointsTeamA: sumA, pointsTeamB: sumB, winner: 'A' };
+        toast(`${teamAName} gewinnt das Spiel (2 Punkte)`);
+    } else if(sumB > sumA){
+        matchResult = { pointsTeamA: sumA, pointsTeamB: sumB, winner: 'B' };
+        toast(`${teamBName} gewinnt das Spiel (2 Punkte)`);
+    } else {
+        matchResult = { pointsTeamA: sumA, pointsTeamB: sumB, winner: 'draw' };
+        toast(`Unentschieden! Beide erhalten 1 Punkt`);
+    }
+    
+    matchesHistory.push(matchResult);
+    
+    if(isTournamentFinished()){
+        document.getElementById('winnerMessage').innerHTML = getWinnerMessageText();
+        toast(`Turnier beendet! ${getWinnerMessageText()}`);
+    } else {
+        document.getElementById('winnerMessage').innerHTML = `✅ Spiel gewertet! Nächstes Spiel (${getNumberOfPlayedMatches()}/${totalGames})`;
+    }
+    
+    resetCurrentGameArrays();
+    updateAllUI();
+    syncToFirebase();
+}
+
+function renderPanels(){
+    const leftContainer = document.getElementById('leftPanel');
+    const rightContainer = document.getElementById('rightPanel');
+    if(!leftContainer || !rightContainer) return;
+    leftContainer.innerHTML = '';
+    rightContainer.innerHTML = '';
+    
+    for(let i=0;i<kehren;i++){
+        const rowA = createKehreRow('A', i, pointsA[i]);
+        const rowB = createKehreRow('B', i, pointsB[i]);
+        
+        let activeIdx = kehren;
+        for(let j=0;j<kehren;j++){
+            if(pointsA[j] === null || pointsB[j] === null){
+                activeIdx = j;
+                break;
+            }
+        }
+        if(i === activeIdx && !isTournamentFinished() && getNumberOfPlayedMatches() < totalGames){
+            rowA.classList.add('active');
+            rowB.classList.add('active');
+        }
+        leftContainer.appendChild(rowA);
+        rightContainer.appendChild(rowB);
+    }
+}
+
+function createKehreRow(team, index, value){
+    const row = document.createElement('div');
+    row.className = 'kehreRow';
+    row.innerHTML = `
+        <div class="kehreNr">${index+1}</div>
+        <div class="points">
+            <button class="pointBtn">0</button>
+            <button class="pointBtn">1</button>
+            <button class="pointBtn">2</button>
+            <button class="pointBtn">3</button>
+            <button class="pointBtn">4</button>
+        </div>
+        <div class="valueBox">${value===null?'-':value}</div>
+    `;
+    const btns = row.querySelectorAll('.pointBtn');
+    btns.forEach(btn => {
+        btn.addEventListener('click', (e)=>{
+            e.stopPropagation();
+            if(isTournamentFinished()){
+                toast("Turnier beendet – neues Turnier starten");
+                return;
+            }
+            if(getNumberOfPlayedMatches() >= totalGames){
+                toast("Alle Spiele absolviert – Turnier vorbei");
+                return;
+            }
+            setPoints(team, index, parseInt(btn.innerText));
+        });
+    });
+    return row;
+}
+
+function setPoints(team, index, val){
+    if(isTournamentFinished()) return toast("Turnier beendet");
+    if(team === 'A'){
+        pointsA[index] = val;
+        if(pointsB[index] === null) pointsB[index] = 0;
+    } else {
+        pointsB[index] = val;
+        if(pointsA[index] === null) pointsA[index] = 0;
+    }
+    renderPanels();
+    updateScoreboardNumbers();
+    
+    let allFilled = true;
+    for(let i=0;i<kehren;i++){
+        if(pointsA[i] === null || pointsB[i] === null) { allFilled = false; break; }
+    }
+    if(allFilled && !isTournamentFinished() && getNumberOfPlayedMatches() < totalGames){
+        toast("Alle Kehren ausgefüllt! Jetzt auf 'Spiel werten' klicken.");
+    }
+    syncToFirebase();
+    updateSpectatorWindow();
+}
+
+function updateScoreboardNumbers(){
+    const sumA = pointsA.reduce((a,b)=>a+(b||0),0);
+    const sumB = pointsB.reduce((a,b)=>a+(b||0),0);
+    document.getElementById('scoreA').innerText = sumA;
+    document.getElementById('scoreB').innerText = sumB;
+    
+    const tourA = getTeamAPointsFromMatches();
+    const tourB = getTeamBPointsFromMatches();
+    document.getElementById('gamesA').innerText = tourA;
+    document.getElementById('gamesB').innerText = tourB;
+    
+    let active = 1;
+    for(let i=0;i<kehren;i++){
+        if(pointsA[i]===null || pointsB[i]===null){
+            active = i+1;
+            break;
+        } else {
+            active = kehren;
+        }
+    }
+    const finished = getNumberOfPlayedMatches() >= totalGames;
+    document.getElementById('currentKehre').innerText = finished ? "–" : active;
+    
+    // Teamnamen syncen
+    const rawA = document.getElementById('teamAInput').value.trim();
+    const rawB = document.getElementById('teamBInput').value.trim();
+    if(rawA !== "") teamAName = rawA;
+    if(rawB !== "") teamBName = rawB;
+    document.getElementById('leftTitle').innerHTML = `🏒 ${teamAName}`;
+    document.getElementById('rightTitle').innerHTML = `⛷️ ${teamBName}`;
+    document.getElementById('centerNameA').innerText = teamAName;
+    document.getElementById('centerNameB').innerText = teamBName;
+    document.getElementById('totalGamesDisplay').innerText = totalGames;
+    
+    if(isTournamentFinished()){
+        document.getElementById('winnerMessage').innerHTML = getWinnerMessageText();
+    } else if(getNumberOfPlayedMatches() > 0 && !document.getElementById('winnerMessage').innerHTML.includes("gewertet")){
+        if(getNumberOfPlayedMatches()<totalGames && document.getElementById('winnerMessage').innerHTML === "")
+            document.getElementById('winnerMessage').innerHTML = `🏁 ${getNumberOfPlayedMatches()} von ${totalGames} Spielen absolviert`;
+    } else if(getNumberOfPlayedMatches()===0){
+        if(document.getElementById('winnerMessage').innerHTML.includes("absolviert") || document.getElementById('winnerMessage').innerHTML.includes("Sieg"))
+            document.getElementById('winnerMessage').innerHTML = "";
+    }
+}
+
+function updateAllUI(){
+    renderPanels();
+    updateScoreboardNumbers();
+    updateSpectatorWindow();
+    if(isTournamentFinished()){
+        document.getElementById('winnerMessage').innerHTML = getWinnerMessageText();
+    }
+}
+
+// ---------- Zuschauer-Monitor ----------
+function openSpectatorWindow() { /* gleicher Code wie bisher, aber kürzer gehalten */
+    if(spectatorWindow && !spectatorWindow.closed){ spectatorWindow.focus(); return; }
+    const spectatorHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Zuschauer</title><style>body{background:#102417;color:white;font-family:sans-serif;padding:40px;}.board{background:white;color:#111;border-radius:48px;padding:50px;}.teams{display:grid;grid-template-columns:1fr 1fr;gap:40px;}.team{background:#f5f8f3;border-radius:30px;padding:40px;text-align:center;border-bottom:14px solid #1f5e3a;}.score{font-size:10rem;font-weight:900;}.wins span{background:#102417;color:white;padding:12px 40px;border-radius:20px;}.footerInfo{display:flex;gap:25px;justify-content:center;margin-top:40px;}.box{background:#eef5e9;padding:20px 40px;border-radius:20px;font-size:2rem;}</style></head><body><div class='board'><div class='teams'><div class='team'><div id='specNameA'></div><div class='score' id='specScoreA'></div><div class='wins'>Spielstand<br><span id='specWinsA'></span></div></div><div class='team red'><div id='specNameB'></div><div class='score' id='specScoreB'></div><div class='wins'>Spielstand<br><span id='specWinsB'></span></div></div></div><div class='footerInfo'><div class='box'>Kehre: <span id='specKehre'></span></div><div class='box timer' id='specTimer'></div><div class='box'>Spiele: <span id='specTotalGames'></span></div></div><div id='specWinner' style='text-align:center;font-size:2rem;margin-top:30px;'></div></div><script>window.updateSpectator = function(d){ document.getElementById('specNameA').innerText=d.teamA; document.getElementById('specNameB').innerText=d.teamB; document.getElementById('specScoreA').innerText=d.scoreA; document.getElementById('specScoreB').innerText=d.scoreB; document.getElementById('specWinsA').innerText=d.winsA; document.getElementById('specWinsB').innerText=d.winsB; document.getElementById('specKehre').innerText=d.kehre; document.getElementById('specTimer').innerText=d.time; document.getElementById('specWinner').innerText=d.winner; document.getElementById('specTotalGames').innerText=d.totalGames; };<\/script></body></html>`;
+    spectatorWindow = window.open('', 'SpectatorMonitor', 'width=1400,height=900');
+    spectatorWindow.document.write(spectatorHTML);
+    spectatorWindow.document.close();
+    updateSpectatorWindow();
+}
+
+function updateSpectatorWindow(){
+    if(!spectatorWindow || spectatorWindow.closed) return;
+    const sumA = pointsA.reduce((a,b)=>a+(b||0),0);
+    const sumB = pointsB.reduce((a,b)=>a+(b||0),0);
+    let activeIdx = 1;
+    for(let i=0;i<kehren;i++){
+        if(pointsA[i]===null || pointsB[i]===null){ activeIdx = i+1; break; }
+        else activeIdx = kehren;
+    }
+    spectatorWindow.updateSpectator({
+        teamA: teamAName, teamB: teamBName, scoreA: sumA, scoreB: sumB,
+        winsA: getTeamAPointsFromMatches(), winsB: getTeamBPointsFromMatches(),
+        kehre: (getNumberOfPlayedMatches()>=totalGames)?"FERTIG":activeIdx,
+        time: document.getElementById('timer').innerText,
+        winner: isTournamentFinished() ? getWinnerMessageText() : (getNumberOfPlayedMatches()>0?`${getNumberOfPlayedMatches()}/${totalGames}`:"Läuft"),
+        totalGames: totalGames
+    });
+}
+
+function initTimer(){
+    const timerSpan = document.getElementById('timer');
+    const start = Date.now();
+    setInterval(()=>{
+        const diff = Math.floor((Date.now()-start)/1000);
+        const h = String(Math.floor(diff/3600)).padStart(2,'0');
+        const m = String(Math.floor((diff%3600)/60)).padStart(2,'0');
+        const s = String(diff%60).padStart(2,'0');
+        timerSpan.innerText = `${h}:${m}:${s}`;
+        updateSpectatorWindow();
+    }, 1000);
+}
+
+function toast(msg, duration=2000){
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.classList.add('show');
+    setTimeout(()=> t.classList.remove('show'), duration);
+}
+
+// Event Listener (sync + UI)
+document.getElementById('teamAInput').addEventListener('input', ()=>{ if(!isRemoteUpdate){ updateAllUI(); syncToFirebase(); } });
+document.getElementById('teamBInput').addEventListener('input', ()=>{ if(!isRemoteUpdate){ updateAllUI(); syncToFirebase(); } });
+document.getElementById('kehrenSelect').addEventListener('change', (e)=>{
+    if(getNumberOfPlayedMatches() > 0 && !confirm("Kehrenanzahl ändern setzt aktuelles Spiel zurück?")){ e.target.value = kehren; return; }
+    kehren = parseInt(e.target.value);
+    resetCurrentGameArrays();
+    updateAllUI();
+    syncToFirebase();
+    toast(`${kehren} Kehren pro Spiel`);
+});
+document.getElementById('gamesCountSelect').addEventListener('change', (e)=>{
+    let newTotal = parseInt(e.target.value);
+    if(getNumberOfPlayedMatches() > 0 && !confirm(`Spielanzahl ändern (${totalGames}→${newTotal}) setzt Turnier zurück?`)){ e.target.value = totalGames; return; }
+    totalGames = newTotal;
+    matchesHistory = [];
+    resetCurrentGameArrays();
+    document.getElementById('winnerMessage').innerHTML = "";
+    updateAllUI();
+    syncToFirebase();
+    toast(`Neue Spielanzahl: ${totalGames} (Sieg 2 Pkt / Remis 1 Pkt)`);
+});
+
+function init(){
+    resetCurrentGameArrays();
+    updateAllUI();
+    initTimer();
+    setInterval(()=> updateSpectatorWindow(), 1000);
+    if(firestoreAvailable && db){
+        setTimeout(()=> syncToFirebase(), 500);
+    }
+}
+init();
+</script>
+</body>
+</html>
