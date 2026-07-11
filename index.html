@@ -383,8 +383,8 @@ const state = {
 function createArena(id){
     return {
         id,
-        teamA:`Mannschaft E`,
-        teamB:`Mannschaft W`,
+        teamA:`Mannschaft W`,
+        teamB:`Mannschaft E`,
         pointsA:Array(6).fill(null),
         pointsB:Array(6).fill(null),
         winsA:0,
@@ -412,7 +412,7 @@ function renderArena(arena){
         <div class="scoreboard">
 
             <div class="score-card">
-                <div class="team-name">⚪ Mannschaft E</div>
+                <div class="team-name">⚪ Mannschaft W</div>
                 <div class="team-score">${scoreA}</div>
                 <div class="team-points">
                     Gewonnene Spiele<br>
@@ -421,7 +421,7 @@ function renderArena(arena){
             </div>
 
             <div class="score-card red">
-                <div class="team-name">🔴 Mannschaft W</div>
+                <div class="team-name">🔴 Mannschaft E</div>
                 <div class="team-score">${scoreB}</div>
                 <div class="team-points">
                     Gewonnene Spiele<br>
@@ -435,12 +435,12 @@ function renderArena(arena){
         <div class="kehren-wrapper">
             <div class="kehren">
                 <div>
-                    <div class="kehren-title">⚪ Mannschaft E</div>
+                    <div class="kehren-title">⚪ Mannschaft W</div>
                     ${renderKehren(arena,'A')}
                 </div>
 
                 <div>
-                    <div class="kehren-title">🔴 Mannschaft W</div>
+                    <div class="kehren-title">🔴 Mannschaft E</div>
                     ${renderKehren(arena,'B')}
                 </div>
             </div>
@@ -541,11 +541,11 @@ function autoEvaluateGame(){
 
     if(a>b){
         arena.winsA++;
-        toast(`⚪ Mannschaft E gewinnt das Spiel (${a}:${b})`);
+        toast(`⚪ Mannschaft W gewinnt das Spiel (${a}:${b})`);
     }
     else if(b>a){
         arena.winsB++;
-        toast(`🔴 Mannschaft W gewinnt das Spiel (${a}:${b})`);
+        toast(`🔴 Mannschaft E gewinnt das Spiel (${a}:${b})`);
     }
     else{
         toast(`Unentschieden (${a}:${b})`);
@@ -582,11 +582,11 @@ function evaluateGame(){
 
     if(a>b){
         arena.winsA++;
-        toast(`⚪ Mannschaft E gewinnt das Spiel (${a}:${b})`);
+        toast(`⚪ Mannschaft W gewinnt das Spiel (${a}:${b})`);
     }
     else if(b>a){
         arena.winsB++;
-        toast(`🔴 Mannschaft W gewinnt das Spiel (${a}:${b})`);
+        toast(`🔴 Mannschaft E gewinnt das Spiel (${a}:${b})`);
     }
     else{
         toast(`Unentschieden (${a}:${b})`);
@@ -616,8 +616,8 @@ function hasWinner(arena){
 }
 
 function winnerName(arena){
-    if(arena.winsA >= state.winsToChampion) return 'Mannschaft E';
-    if(arena.winsB >= state.winsToChampion) return 'Mannschaft W';
+    if(arena.winsA >= state.winsToChampion) return 'Mannschaft W';
+    if(arena.winsB >= state.winsToChampion) return 'Mannschaft E';
     return '';
 }
 
@@ -737,13 +737,13 @@ function updateSpectatorWindow(){
         <div class="teams">
 
             <div class="team">
-                <div class="name">⚪ Mannschaft E</div>
+                <div class="name">⚪ Mannschaft W</div>
                 <div class="score">${sum(arena.pointsA)}</div>
                 <div class="wins">🏆 ${arena.winsA}</div>
             </div>
 
             <div class="team">
-                <div class="name">🔴 Mannschaft W</div>
+                <div class="name">🔴 Mannschaft E</div>
                 <div class="score">${sum(arena.pointsB)}</div>
                 <div class="wins">🏆 ${arena.winsB}</div>
             </div>
