@@ -270,7 +270,7 @@ button{
 
 .footer{
     display:flex;
-    justify-content:space-between;
+    justify-content:center;
     align-items:center;
     gap:10px;
     flex-wrap:wrap;
@@ -283,6 +283,7 @@ button{
     display:flex;
     gap:10px;
     flex-wrap:wrap;
+    justify-content:center;
 }
 
 .footer .footer-right {
@@ -293,11 +294,16 @@ button{
     border-radius:30px;
     font-weight:500;
     letter-spacing:0.3px;
+    margin-left:20px;
 }
 
 .gold{
     background:var(--gold);
     color:black;
+}
+
+.gold:hover{
+    background:#f0c860;
 }
 
 .toast{
@@ -534,11 +540,10 @@ function renderArena(arena){
         <div class="footer">
             <div class="footer-left">
                 <button class="gold" onclick="evaluateGame()">🏆 Spiel werten</button>
-                <button onclick="resetCurrent()">🔄 Kehren löschen</button>
                 <button onclick="resetGame()">🔄 Spiel neu starten</button>
                 <button onclick="openKehrenDialog()">🧹 Kehre löschen</button>
             </div>
-            <div class="footer-right">@by Roland Koll, Version 1.1</div>
+            <div class="footer-right">@by Roland Koll, Version 1.0</div>
         </div>
 
     </div>
@@ -667,13 +672,6 @@ function winnerName(arena){
 
 function sum(arr){
     return arr.reduce((a,b)=>a+(b||0),0);
-}
-
-function resetCurrent(){
-    state.arena.pointsA = Array(state.kehren).fill(null);
-    state.arena.pointsB = Array(state.kehren).fill(null);
-    render();
-    toast('Alle Kehren wurden gelöscht');
 }
 
 function resetGame(){
