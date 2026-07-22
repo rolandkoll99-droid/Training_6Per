@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
 <title>ESV Grein – Trainingssystem</title>
 
 <style>
@@ -19,20 +19,28 @@
     margin:0;
     padding:0;
     box-sizing:border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
 }
 
 body{
     font-family:Segoe UI,Arial,sans-serif;
     background:linear-gradient(135deg,#17351f,#0d1f13);
     color:#222;
-    height:100vh;
-    overflow:hidden;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .header{
-    position:sticky;
-    top:0;
-    z-index:1000;
+    position: sticky;
+    top: 0;
+    z-index: 500;
     background:var(--green);
     color:white;
     padding:14px;
@@ -41,6 +49,7 @@ body{
     align-items:center;
     flex-wrap:wrap;
     gap:12px;
+    flex-shrink:0;
 }
 
 .header h1{
@@ -61,6 +70,7 @@ input{
     border-radius:12px;
     padding:10px 14px;
     font-size:1rem;
+    touch-action: manipulation;
 }
 
 button{
@@ -68,26 +78,32 @@ button{
     background:var(--green);
     color:white;
     font-weight:700;
+    touch-action: manipulation;
+    transition: transform 0.1s;
+}
+
+button:active {
+    transform: scale(0.95);
 }
 
 .layout{
-    display:flex;
-    justify-content:center;
+    flex: 1;
     padding:16px;
-    height:calc(100vh - 90px);
-    overflow:hidden;
+    overflow: hidden;
+    min-height: 0;
 }
 
 .arena{
     width:100%;
     max-width:1200px;
+    height:100%;
     background:white;
     border-radius:22px;
     overflow:hidden;
     box-shadow:0 10px 30px rgba(0,0,0,.3);
     display:flex;
     flex-direction:column;
-    height:100%;
+    margin: 0 auto;
 }
 
 .arena-header{
@@ -121,7 +137,7 @@ button{
     text-align:center;
     border-bottom:8px solid var(--green);
     display:flex;
-    justify-content:space-between;
+    justify-content:center;
     align-items:center;
 }
 
@@ -169,12 +185,14 @@ button{
     font-size:1.4rem;
 }
 
-/* Kehren-Bereich - scrollbar */
 .kehren-wrapper{
     flex:1;
     overflow-y:auto;
     padding:0 14px 14px;
     min-height:0;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
 }
 
 .kehren-wrapper::-webkit-scrollbar{
@@ -213,15 +231,23 @@ button{
     gap:8px;
     align-items:center;
     background:white;
-    border:1px solid var(--border);
+    border:2px solid var(--border);
     border-radius:14px;
     padding:8px;
     margin-bottom:8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.kehre-row:active {
+    transform: scale(0.98);
 }
 
 .kehre-row.active{
     border:3px solid #4caf50;
     background:#f3fff2;
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.2);
 }
 
 .kehre-row.completed{
@@ -237,22 +263,29 @@ button{
 
 .points{
     display:flex;
-    gap:5px;
+    gap:6px;
     justify-content:center;
     flex-wrap:wrap;
 }
 
 .point-btn{
-    min-width:34px;
-    min-height:34px;
-    border-radius:8px;
+    width:44px;
+    height:44px;
+    border-radius:10px;
     border:2px solid var(--border);
     background:white;
     color:black;
     font-weight:900;
+    font-size:16px;
+    touch-action: manipulation;
+    transition: all 0.15s;
+    display:flex;
+    align-items:center;
+    justify-content:center;
 }
 
-.point-btn:hover{
+.point-btn:active {
+    transform: scale(0.92);
     background:var(--green);
     color:white;
 }
@@ -260,6 +293,7 @@ button{
 .point-btn.active-point{
     background:var(--green);
     color:white;
+    border-color:var(--green);
 }
 
 .kehre-value{
@@ -269,6 +303,9 @@ button{
 }
 
 .footer{
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
     display:flex;
     justify-content:center;
     align-items:center;
@@ -277,6 +314,7 @@ button{
     padding:14px;
     border-top:1px solid var(--border);
     flex-shrink:0;
+    background: white;
 }
 
 .footer .footer-left {
@@ -302,7 +340,7 @@ button{
     color:black;
 }
 
-.gold:hover{
+.gold:active{
     background:#f0c860;
 }
 
@@ -318,6 +356,8 @@ button{
     opacity:0;
     transition:.3s;
     z-index:9999;
+    pointer-events: none;
+    font-size:1rem;
 }
 
 .toast.show{
@@ -358,6 +398,7 @@ button{
     justify-content: center;
     align-items: center;
     z-index: 10000;
+    touch-action: manipulation;
 }
 
 .kehren-dialog-overlay.show {
@@ -371,6 +412,7 @@ button{
     max-width: 400px;
     width: 90%;
     box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    touch-action: manipulation;
 }
 
 .kehren-dialog h3 {
@@ -381,11 +423,13 @@ button{
 
 .kehren-dialog select {
     width: 100%;
-    padding: 12px;
+    padding: 14px;
     border: 2px solid var(--border);
     border-radius: 12px;
     font-size: 1.1rem;
     margin-bottom: 16px;
+    min-height: 50px;
+    touch-action: manipulation;
 }
 
 .kehren-dialog .dialog-buttons {
@@ -395,9 +439,12 @@ button{
 }
 
 .kehren-dialog .dialog-buttons button {
-    padding: 10px 20px;
+    padding: 12px 24px;
     border-radius: 12px;
     font-weight: 700;
+    min-height: 50px;
+    min-width: 90px;
+    touch-action: manipulation;
 }
 
 .kehren-dialog .dialog-buttons .btn-cancel {
@@ -409,22 +456,95 @@ button{
     background: var(--red);
     color: white;
 }
+
+/* ===== RESPONSIVE FÜR TABLETS ===== */
+@media (max-width: 900px) {
+    .scoreboard {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .kehren {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .point-btn {
+        width: 58px;
+        height: 58px;
+        font-size: 22px;
+        border-radius: 12px;
+    }
+    
+    .team-score {
+        font-size: 4rem;
+    }
+    
+    .kehre-row {
+        grid-template-columns: 80px 1fr 50px;
+        padding: 10px;
+        border-radius: 16px;
+    }
+    
+    .kehre-number {
+        font-size: 1rem;
+    }
+    
+    .kehre-value {
+        font-size: 1.3rem;
+    }
+    
+    .header h1 {
+        font-size: 1.3rem;
+    }
+    
+    .footer .footer-right {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 600px) {
+    .point-btn {
+        width: 48px;
+        height: 48px;
+        font-size: 18px;
+    }
+    
+    .kehre-row {
+        grid-template-columns: 60px 1fr 40px;
+        padding: 6px;
+        gap: 4px;
+    }
+    
+    .team-score {
+        font-size: 3rem;
+    }
+    
+    .header h1 {
+        font-size: 1.1rem;
+    }
+    
+    .header-controls select,
+    .header-controls button {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+    }
+}
 </style>
 </head>
 <body>
 
 <div class="header">
-    <h1>🥌 ESV Grein – Trainingssystem</h1>
+    <h1>🥌 ESV Grein Training</h1>
 
     <div class="header-controls">
-        <!-- Spielerauswahl 3-6 -->
         <div class="player-selector">
-            <label for="playerCount">👥 Spieler</label>
+            <label for="playerCount">👥</label>
             <select id="playerCount">
-                <option value="3">3</option>
-                <option value="4"selected>4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
+                <option value="3">3 Spieler</option>
+                <option value="4"selected>4 Spieler</option>
+                <option value="5">5 Spieler</option>
+                <option value="6">6 Spieler</option>
             </select>
         </div>
 
@@ -437,21 +557,22 @@ button{
         </select>
 
         <select id="kehrenSelect">
-             <option value="4">4 Kehren</option>
+            <option value="4">4 Kehren</option>
             <option value="6" selected>6 Kehren</option>
             <option value="8">8 Kehren</option>
         </select>
 
-        <button onclick="fullReset()">🆕 Reset</button>
+        <button onclick="fullReset()" style="background:#b93a32;">↺</button>
     </div>
 </div>
 
 <div class="layout" id="layout"></div>
 
 <!-- Dialog für Kehrenauswahl -->
-<div class="kehren-dialog-overlay" id="kehrenDialog">
-    <div class="kehren-dialog">
-        <h3>🧹 Kehre zum Löschen auswählen</h3>
+<div class="kehren-dialog-overlay" id="kehrenDialog" onclick="closeKehrenDialog(event)">
+    <div class="kehren-dialog" onclick="event.stopPropagation();">
+        <h3>Kehre löschen</h3>
+        <p style="margin-bottom:12px;color:#666;">Wählen Sie die zu löschende Kehre:</p>
         <select id="kehrenSelectDialog"></select>
         <div class="dialog-buttons">
             <button class="btn-cancel" onclick="closeKehrenDialog()">Abbrechen</button>
@@ -464,42 +585,40 @@ button{
 
 <script>
 const state = {
-    kehren:6,
-    winsToChampion:2,
-    playerCount:4,  // 3-6
-    arena:createArena(1)
+    kehren: 6,
+    winsToChampion: 2,
+    playerCount: 4,
+    arena: createArena(1)
 };
 
-function createArena(id){
+function createArena(id) {
     return {
         id,
-        teamA:`Mannschaft W`,
-        teamB:`Mannschaft E`,
-        pointsA:Array(6).fill(null),
-        pointsB:Array(6).fill(null),
-        winsA:0,
-        winsB:0
+        teamA: 'Mannschaft W',
+        teamB: 'Mannschaft E',
+        pointsA: Array(6).fill(null),
+        pointsB: Array(6).fill(null),
+        winsA: 0,
+        winsB: 0
     };
 }
 
-function render(){
+function render() {
     document.getElementById('layout').innerHTML = renderArena(state.arena);
+    scrollToActiveKehre();
 }
 
-function renderArena(arena){
-
+function renderArena(arena) {
     const scoreA = sum(arena.pointsA);
     const scoreB = sum(arena.pointsB);
 
     return `
     <div class="arena">
-
         <div class="arena-header">
             <div class="arena-title">🥌 ESV Grein – Training</div>
         </div>
 
         <div class="scoreboard">
-
             <div class="score-card">
                 <div class="team-info">
                     <div class="team-name">⚪ Mannschaft W</div>
@@ -519,68 +638,59 @@ function renderArena(arena){
                     <span>🏆</span> ${arena.winsB}
                 </div>
             </div>
-
         </div>
 
-        <!-- Scrollbarer Kehren-Bereich -->
-        <div class="kehren-wrapper">
+        <div class="kehren-wrapper" id="kehrenWrapper">
             <div class="kehren">
                 <div>
                     <div class="kehren-title">⚪ Mannschaft W</div>
-                    ${renderKehren(arena,'A')}
+                    ${renderKehren(arena, 'A')}
                 </div>
-
                 <div>
                     <div class="kehren-title">🔴 Mannschaft E</div>
-                    ${renderKehren(arena,'B')}
+                    ${renderKehren(arena, 'B')}
                 </div>
             </div>
         </div>
 
         <div class="footer">
             <div class="footer-left">
-                <button class="gold" onclick="evaluateGame()">🏆 Spiel werten</button>
-                <button onclick="resetGame()">🔄 Spiel neu starten</button>
-                <button onclick="openKehrenDialog()">🧹 Kehre löschen</button>
+                <button class="gold" onclick="evaluateGame()">Spiel Werten</button>
+                <button onclick="resetGame()">Neues Spiel Starten</button>
+                <button onclick="openKehrenDialog()">Kehre Löschen</button>
             </div>
-            <div class="footer-right">@by Roland Koll, Version 1.1</div>
+            <div class="footer-right">@Roland Koll Version 1.1</div>
         </div>
-
     </div>
     `;
 }
 
-function renderKehren(arena,team){
+function renderKehren(arena, team) {
+    let html = '';
+    const arr = team === 'A' ? arena.pointsA : arena.pointsB;
+    const activeIndex = activeKehre(arena) - 1;
 
-    let html='';
-
-    const arr = team==='A' ? arena.pointsA : arena.pointsB;
-
-    for(let i=0;i<state.kehren;i++){
-
-        const active = activeKehre(arena)===i+1;
+    for (let i = 0; i < state.kehren; i++) {
+        const active = activeIndex === i;
         const isCompleted = arr[i] !== null;
-
-        // Maximalpunkte basierend auf Spieleranzahl: 3 Spieler = max 3, 4=4, 5=5, 6=6
         const maxPoints = state.playerCount;
 
         html += `
-        <div class="kehre-row ${active?'active':''} ${isCompleted?'completed':''}">
-
-            <div class="kehre-number">Kehre ${i+1}</div>
-
+        <div class="kehre-row ${active ? 'active' : ''} ${isCompleted ? 'completed' : ''}" 
+             data-kehre="${i}" 
+             data-team="${team}"
+             onclick="handleKehreClick(${i}, '${team}')">
+            <div class="kehre-number">${i + 1}</div>
             <div class="points">
                 ${Array.from({length: maxPoints + 1}, (_, v) => `
-                    <button
-                        class="point-btn ${arr[i] === v ? 'active-point' : ''}"
-                        onclick="setPoints('${team}',${i},${v})">
+                    <button class="point-btn ${arr[i] === v ? 'active-point' : ''}"
+                            onclick="event.stopPropagation(); setPoints('${team}', ${i}, ${v})"
+                            data-value="${v}">
                         ${v}
                     </button>
                 `).join('')}
             </div>
-
             <div class="kehre-value">${arr[i] ?? '-'}</div>
-
         </div>
         `;
     }
@@ -588,38 +698,79 @@ function renderKehren(arena,team){
     return html;
 }
 
-function setPoints(team,index,value){
-
+// ===== VERBESSERTE setPoints Funktion =====
+function setPoints(team, index, value) {
     const arena = state.arena;
 
-    if(hasWinner(arena)){
+    if (hasWinner(arena)) {
         toast('Training beendet');
         return;
     }
 
-    if(team==='A'){
-        arena.pointsA[index]=value;
-        if(arena.pointsB[index]===null) arena.pointsB[index]=0;
-    }else{
-        arena.pointsB[index]=value;
-        if(arena.pointsA[index]===null) arena.pointsA[index]=0;
+    // Direkt setzen ohne automatische Nullen
+    if (team === 'A') {
+        arena.pointsA[index] = value;
+    } else {
+        arena.pointsB[index] = value;
     }
 
+    // Nur neu rendern
     render();
 }
 
-function evaluateGame(){
-
+// ===== NEU: Klick auf Kehre für Lösch-Dialog =====
+function handleKehreClick(index, team) {
     const arena = state.arena;
-
-    if(hasWinner(arena)){
+    if (hasWinner(arena)) {
         toast('Training beendet');
         return;
     }
 
-    // Prüfen ob alle Kehren ausgefüllt sind
-    for(let i=0;i<state.kehren;i++){
-        if(arena.pointsA[i]===null || arena.pointsB[i]===null){
+    // Prüfen ob die Kehre Werte hat
+    const hasValue = arena.pointsA[index] !== null || arena.pointsB[index] !== null;
+    if (!hasValue) {
+        toast(`Kehre ${index + 1} ist bereits leer`);
+        return;
+    }
+
+    // Dialog öffnen mit vorausgewählter Kehre
+    openKehrenDialog(index);
+}
+
+function scrollToActiveKehre() {
+    setTimeout(() => {
+        const wrapper = document.getElementById('kehrenWrapper');
+        if (!wrapper) return;
+
+        const activeRow = wrapper.querySelector('.kehre-row.active');
+        if (activeRow) {
+            const wrapperRect = wrapper.getBoundingClientRect();
+            const rowRect = activeRow.getBoundingClientRect();
+
+            const isVisible = 
+                rowRect.top >= wrapperRect.top + 10 &&
+                rowRect.bottom <= wrapperRect.bottom - 10;
+
+            if (!isVisible) {
+                activeRow.scrollIntoView({
+                    block: 'center',
+                    behavior: 'smooth'
+                });
+            }
+        }
+    }, 50);
+}
+
+function evaluateGame() {
+    const arena = state.arena;
+
+    if (hasWinner(arena)) {
+        toast('Training beendet');
+        return;
+    }
+
+    for (let i = 0; i < state.kehren; i++) {
+        if (arena.pointsA[i] === null || arena.pointsB[i] === null) {
             toast('Bitte alle Kehren ausfüllen');
             return;
         }
@@ -628,224 +779,169 @@ function evaluateGame(){
     const a = sum(arena.pointsA);
     const b = sum(arena.pointsB);
 
-    if(a>b){
+    if (a > b) {
         arena.winsA++;
-        toast(`⚪ Mannschaft W gewinnt das Spiel (${a}:${b})`);
-    }
-    else if(b>a){
+        toast(`⚪ Mannschaft W gewinnt (${a}:${b})`);
+    } else if (b > a) {
         arena.winsB++;
-        toast(`🔴 Mannschaft E gewinnt das Spiel (${a}:${b})`);
-    }
-    else{
+        toast(`🔴 Mannschaft E gewinnt (${a}:${b})`);
+    } else {
         toast(`Unentschieden (${a}:${b})`);
     }
 
-    // Kehren für nächstes Spiel zurücksetzen
     arena.pointsA = Array(state.kehren).fill(null);
     arena.pointsB = Array(state.kehren).fill(null);
 
-    if(hasWinner(arena)){
+    if (hasWinner(arena)) {
         toast(`🏆 ${winnerName(arena)} gewinnt das Training!`);
     }
 
     render();
 }
 
-function activeKehre(arena){
-    for(let i=0;i<state.kehren;i++){
-        if(arena.pointsA[i]===null || arena.pointsB[i]===null){
-            return i+1;
+function activeKehre(arena) {
+    for (let i = 0; i < state.kehren; i++) {
+        if (arena.pointsA[i] === null || arena.pointsB[i] === null) {
+            return i + 1;
         }
     }
     return state.kehren;
 }
 
-function hasWinner(arena){
+function hasWinner(arena) {
     return arena.winsA >= state.winsToChampion || arena.winsB >= state.winsToChampion;
 }
 
-function winnerName(arena){
-    if(arena.winsA >= state.winsToChampion) return 'Mannschaft W';
-    if(arena.winsB >= state.winsToChampion) return 'Mannschaft E';
+function winnerName(arena) {
+    if (arena.winsA >= state.winsToChampion) return 'Mannschaft W';
+    if (arena.winsB >= state.winsToChampion) return 'Mannschaft E';
     return '';
 }
 
-function sum(arr){
-    return arr.reduce((a,b)=>a+(b||0),0);
+function sum(arr) {
+    return arr.reduce((a, b) => a + (b || 0), 0);
 }
 
-function resetGame(){
+function resetGame() {
     const arena = state.arena;
-    // Spiel zurücksetzen: Punkte und Siege auf 0, aber Trainingseinstellungen bleiben
     arena.pointsA = Array(state.kehren).fill(null);
     arena.pointsB = Array(state.kehren).fill(null);
     arena.winsA = 0;
     arena.winsB = 0;
     render();
-    toast('Spiel wurde neu gestartet (Punkte und Siege zurückgesetzt)');
+    toast('Spiel neu gestartet');
 }
 
-// Dialog-Funktionen für Kehre löschen
-function openKehrenDialog(){
+// ===== VERBESSERTE Dialog-Funktionen =====
+function openKehrenDialog(preSelectedIndex) {
     const arena = state.arena;
-    if(hasWinner(arena)){
+    if (hasWinner(arena)) {
         toast('Training beendet');
         return;
     }
-    
+
     const dialog = document.getElementById('kehrenDialog');
     const select = document.getElementById('kehrenSelectDialog');
-    
-    // Select mit allen Kehren füllen
+
     select.innerHTML = '';
-    for(let i=0; i<state.kehren; i++){
+    let hasValues = false;
+
+    for (let i = 0; i < state.kehren; i++) {
         const option = document.createElement('option');
         option.value = i;
         const hasValue = arena.pointsA[i] !== null || arena.pointsB[i] !== null;
-        option.textContent = `Kehre ${i+1} ${hasValue ? '✏️' : '⬜'}`;
+        if (hasValue) hasValues = true;
+        option.textContent = `Kehre ${i + 1} ${hasValue ? '✏️' : '⬜'}`;
         select.appendChild(option);
     }
-    
+
+    if (!hasValues) {
+        toast('Alle Kehren sind bereits leer');
+        return;
+    }
+
+    // Wenn eine Kehre vorausgewählt wurde
+    if (preSelectedIndex !== undefined) {
+        select.value = preSelectedIndex;
+    }
+
     dialog.classList.add('show');
+    document.body.style.overflow = 'hidden';
 }
 
-function closeKehrenDialog(){
+function closeKehrenDialog(event) {
+    if (event && event.target !== event.currentTarget) return;
     document.getElementById('kehrenDialog').classList.remove('show');
+    document.body.style.overflow = '';
 }
 
-function confirmDeleteKehre(){
+function confirmDeleteKehre() {
     const arena = state.arena;
     const select = document.getElementById('kehrenSelectDialog');
     const index = parseInt(select.value);
-    
-    // Prüfen ob die Kehre überhaupt Werte hat
-    if(arena.pointsA[index] === null && arena.pointsB[index] === null){
-        toast(`Kehre ${index+1} ist bereits leer`);
+
+    if (arena.pointsA[index] === null && arena.pointsB[index] === null) {
+        toast(`Kehre ${index + 1} ist bereits leer`);
         closeKehrenDialog();
         return;
     }
-    
-    // Kehre löschen
+
     arena.pointsA[index] = null;
     arena.pointsB[index] = null;
-    
+
     render();
-    toast(`Kehre ${index+1} wurde gelöscht`);
+    toast(`Kehre ${index + 1} gelöscht`);
     closeKehrenDialog();
 }
 
-function fullReset(){
+function fullReset() {
     state.arena = createArena(1);
     render();
-    toast('Kompletter Reset durchgeführt');
+    toast('Kompletter Reset');
 }
 
-function toast(msg){
-    const t=document.getElementById('toast');
-    t.textContent=msg;
+function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
     t.classList.add('show');
-    setTimeout(()=>t.classList.remove('show'),2500);
+    clearTimeout(t._timeout);
+    t._timeout = setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// Event-Listener für Spielerauswahl (3-6)
-document.getElementById('playerCount').addEventListener('change', function(e){
+// ===== EVENT-LISTENER =====
+document.getElementById('playerCount').addEventListener('change', function(e) {
     state.playerCount = Number(e.target.value);
     render();
-    toast(`👥 ${state.playerCount} Spieler – Kehrenpunkte angepasst`);
+    toast(`👥 ${state.playerCount} Spieler`);
 });
 
-// Event-Listener für Kehrenauswahl
-document.getElementById('kehrenSelect').addEventListener('change', function(e){
+document.getElementById('kehrenSelect').addEventListener('change', function(e) {
     state.kehren = Number(e.target.value);
-
     state.arena.pointsA = Array(state.kehren).fill(null);
     state.arena.pointsB = Array(state.kehren).fill(null);
-
     render();
 });
 
-// Event-Listener für Siegauswahl
-document.getElementById('gamesSelect').addEventListener('change', function(e){
+document.getElementById('gamesSelect').addEventListener('change', function(e) {
     state.winsToChampion = Number(e.target.value);
     render();
 });
+
+// ===== HÖHENKORREKTUR =====
+function setCorrectHeight() {
+    const vh = window.innerHeight;
+    document.documentElement.style.setProperty('height', vh + 'px');
+    document.body.style.setProperty('height', vh + 'px');
+}
+
+window.addEventListener('resize', setCorrectHeight);
+window.addEventListener('orientationchange', function() {
+    setTimeout(setCorrectHeight, 300);
+});
+setCorrectHeight();
 
 render();
 </script>
 
 </body>
 </html>
-
-// ===== DATEN EXPORTIEREN =====
-function exportGameData() {
-    const arena = state.arena;
-    const data = {
-        pointsA: arena.pointsA,
-        pointsB: arena.pointsB,
-        scoreA: sum(arena.pointsA),
-        scoreB: sum(arena.pointsB),
-        winsA: arena.winsA,
-        winsB: arena.winsB,
-        activeKehre: activeKehre(arena),
-        winner: hasWinner(arena) ? winnerName(arena) : '',
-        timestamp: new Date().toISOString()
-    };
-    
-    // In JSON umwandeln
-    const json = JSON.stringify(data, null, 2);
-    
-    // In Zwischenablage kopieren
-    navigator.clipboard.writeText(json).then(() => {
-        toast('📋 Daten in Zwischenablage kopiert!');
-        toast('📱 Öffnen Sie den Zuschauer-Monitor und fügen Sie die Daten ein (Strg+V)');
-    }).catch(() => {
-        // Fallback: Zum Download anbieten
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'esv-data.json';
-        a.click();
-        URL.revokeObjectURL(url);
-        toast('📥 Daten heruntergeladen!');
-    });
-    
-    return json;
-}
-
-// ===== AUTO-EXPORT NACH ÄNDERUNGEN =====
-function autoExportData() {
-    if (window.autoExportEnabled) {
-        const data = exportGameData();
-        // Optional: In LocalStorage speichern
-        localStorage.setItem('esvData', data);
-    }
-}
-
-// Auto-Export aktivieren (optional)
-window.autoExportEnabled = true;
-
-// Nach jeder Änderung exportieren
-const originalSetPoints = setPoints;
-setPoints = function(team, index, value) {
-    originalSetPoints(team, index, value);
-    autoExportData();
-};
-
-// Auto-Export Button hinzufügen
-const exportBtn = document.createElement('button');
-exportBtn.textContent = '📋 Daten kopieren';
-exportBtn.onclick = exportGameData;
-exportBtn.style.background = '#2196F3';
-document.querySelector('.footer .footer-left').appendChild(exportBtn);
-
-// Toggle für Auto-Export
-const autoBtn = document.createElement('button');
-autoBtn.textContent = '🔄 Auto-Export: AN';
-autoBtn.onclick = function() {
-    window.autoExportEnabled = !window.autoExportEnabled;
-    this.textContent = `🔄 Auto-Export: ${window.autoExportEnabled ? 'AN' : 'AUS'}`;
-    this.style.background = window.autoExportEnabled ? '#4caf50' : '#f44336';
-};
-autoBtn.style.background = '#4caf50';
-document.querySelector('.footer .footer-left').appendChild(autoBtn);
