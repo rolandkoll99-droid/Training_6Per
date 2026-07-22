@@ -775,3 +775,77 @@ render();
 
 </body>
 </html>
+
+// ===== DATEN EXPORTIEREN =====
+function exportGameData() {
+    const arena = state.arena;
+    const data = {
+        pointsA: arena.pointsA,
+        pointsB: arena.pointsB,
+        scoreA: sum(arena.pointsA),
+        scoreB: sum(arena.pointsB),
+        winsA: arena.winsA,
+        winsB: arena.winsB,
+        activeKehre: activeKehre(arena),
+        winner: hasWinner(arena) ? winnerName(arena) : '',
+        timestamp: new Date().toISOString()
+    };
+    
+    // In JSON umwandeln
+    const json = JSON.stringify(data, null, 2);
+    
+    // In Zwischenablage kopieren
+    navigator.clipboard.writeText(json).then(() => {
+        toast('📋 Daten in Zwischenablage kopiert!');
+        toast('📱 Öffnen Sie den Zuschauer-Monitor und fügen Sie die Daten ein (Strg+V)');
+    }).catch(() => {
+        // Fallback: Zum Download anbieten
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'esv-data.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('📥 Daten heruntergeladen!');
+    });
+    
+    return json;
+}
+
+// ===== AUTO-EXPORT NACH ÄNDERUNGEN =====
+function autoExportData() {
+    if (window.autoExportEnabled) {
+        const data = exportGameData();
+        // Optional: In LocalStorage speichern
+        localStorage.setItem('esvData', data);
+    }
+}
+
+// Auto-Export aktivieren (optional)
+window.autoExportEnabled = true;
+
+// Nach jeder Änderung exportieren
+const originalSetPoints = setPoints;
+setPoints = function(team, index, value) {
+    originalSetPoints(team, index, value);
+    autoExportData();
+};
+
+// Auto-Export Button hinzufügen
+const exportBtn = document.createElement('button');
+exportBtn.textContent = '📋 Daten kopieren';
+exportBtn.onclick = exportGameData;
+exportBtn.style.background = '#2196F3';
+document.querySelector('.footer .footer-left').appendChild(exportBtn);
+
+// Toggle für Auto-Export
+const autoBtn = document.createElement('button');
+autoBtn.textContent = '🔄 Auto-Export: AN';
+autoBtn.onclick = function() {
+    window.autoExportEnabled = !window.autoExportEnabled;
+    this.textContent = `🔄 Auto-Export: ${window.autoExportEnabled ? 'AN' : 'AUS'}`;
+    this.style.background = window.autoExportEnabled ? '#4caf50' : '#f44336';
+};
+autoBtn.style.background = '#4caf50';
+document.querySelector('.footer .footer-left').appendChild(autoBtn);
